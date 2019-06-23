@@ -2,176 +2,257 @@
 <meta charset="utf-8">
 <html>
 <head>
-    <style>
-        .bar {
-            fill: teal;
-        }
-    </style>
     <script src="https://d3js.org/d3.v4.min.js"></script>
-    <link rel="stylesheet" type="text/css" href="/stylesheets/styles.css">
- 
+    <link rel="stylesheet" type="text/css" href="/stylesheets/styles.css" />
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.4.0/jquery.min.js"></script>
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.4.0/js/bootstrap.min.js"></script>
+    <script>
+        const descp = [];
+        descp[0] = `A stream graph describing the normal distribution of expected rainfall.
+                    The yellow color describes the actual rainfall where the blue describes the predicted value
+                    corresponding to the value of hyperparameter`;
+        descp[1] = `It is a bar graph representing the expected rainfall corresponding to the value
+                    of hyperparameter. The blurr in on the bars denote the uncertainty of each rainfall.`;
+        descp[2] = `The hyperbolic'ish graph is the represents the Cubit Error Rate (CER) vs the hyperparameter
+                    and gives the idea of the sensitivity in each region.`;
 
+        $(document).ready(function(){
+          $(".my_button2").hover(function(){
+            //   console.log("here");
+              $(".inner_before").css("border-color", "transparent #fff transparent transparent");
+              $(".inner_before").css("top", "17px");
+              $(".inner_before").css("left", "-1px");
+              $(".inner_before").css("border-width", "20px 16px 20px 0px");
+
+          }, function(){
+              $(".inner_before").css("border-color", "transparent #0e0e0e transparent transparent");
+              $(".inner_before").css("top", "18px");
+              $(".inner_before").css("left", "-1px");
+              $(".inner_before").css("border-width", "17px 17px 17px 0px");
+          });
+          $(".my_button2").click(function(){
+              $('#demo').html(descp[flag]);
+          });
+          $(".my_button").click(function(){
+              $('#demo').html(descp[flag]);
+          });
+        });
+    </script>
 </head>
 <body>
 
 
 <div id = "top-side">
   <h1 id = "heading">   </h1>
-</div>  
+</div>
 
 <div id = "bottom-side">
   <h1 id = "heading">   </h1>
-</div>  
+</div>
 
 <div id = "left-side">
-  
-  <h1 id = "heading">Uncertainity Visualisation</h1>
+
+  <h1 id = "my_heading">Uncertainty Visualisation</h1>
 
   <div id = "slider1">
-  <input type="range"  min="1" max="10" id="hyperparameter">
+      <input type="range" class="my_slider"  min="500" max="995" value=500 step=5 id="hyperparameter">
   </div>
 
-  <h2 id = "info">Value of Hyperparameter: <div id = insert> 0.5 </div> </h2>
+  <h2 id = "info">Value of Hyperparameter <div id = insert> 0.5 </div> </h2>
 
   <div id = "button1">
-  <button type="button" onclick="change(0)">TYPE-1 </button>
+  <button type="button" class="my_button" onclick="change(0)">First</button>
   </div>
-  
+
   <div id = "button2">
-  <button type="button" onclick="change(1)">TYPE-2 </button>
+  <button type="button" class="my_button" onclick="change(1)">Second</button>
   </div>
+
+  <div id = "button3">
+  <button type="button" class="my_button" onclick="change(2)">Third</button>
+  </div>
+
+  <div id="right-side">
+      <a class="my_button2" data-toggle="collapse" data-target="#demo">Description</a>
+      <a class="inner_before"></a>
+      <div id="demo" class="collapse"></div>
+  </div>
+
 
 </div>
 
-<svg width="1350" height="700"></svg>
+<svg width="1340" height="700"></svg>
 
 <script type="text/javascript">
 
-var flag = 0,last_val=5 ;
+var flag = 0,last_val=500;
 
 var svg;
+
+var tempData = {};
+var hyperData;
+
+function readData(sec) {
+  return new Promise(resolve => {
+
+      //*************** main reading function *****************
+      d3.csv("my.csv", function(error, data) {
+          if (error) throw error;
+
+          // console.log(data.length);
+          var arr;
+          for(var i=0; i<data.length; i++){
+              // console.log(Object.values(data[i]));
+
+              key = data[i]['alpha'];
+              arr = Object.values(data[i]);
+              arr.splice(arr.length-2,2);
+
+              if(!(/^[a-zA-Z]+$/.test(data[i]['alpha'])))
+              key = parseFloat(key);
+
+              tempData[key] = arr;
+          }
+        //   console.log(tempData);
+          console.log('in csv');
+      });
+      //************* end *****************
+
+      //************ Reading from second file *****************
+      d3.csv("hyper_cube.csv", function(error, data) {
+          hyperData = data;
+      });
+      // *********** END ********************************
+    setTimeout(() => {
+        resolve();
+        // console.log(tempData);
+    }, sec*1000);
+  });
+}
 
 function change(val) {
 
   flag = val ;
-  
+
   svg.selectAll("*").remove();
-  
-  if(flag=='0')
+  // var last_val=500;
+  var temp_val = last_val;
+  last_val/=1000;
+  // console.log(tempData);
+  if(flag == 0)
     update1(last_val);
-
+  else if(flag == 1)
+    update2(last_val);
   else
-    update2(last_val) ;  
+    update3(last_val);
 
+  last_val = temp_val;
 }
 
 
 function update1(hyperparameter) {
 
-  svg = d3.select("svg"),
-  margin = {top: 40, right: 50, bottom: 160, left: 400},
-  width = +svg.attr("width") - margin.left - margin.right,
-  height = +svg.attr("height") - margin.top - margin.bottom,
-  g = svg.append("g").attr("transform", "translate(" + margin.left + "," + margin.top + ")");
-  
+    // console.log(hyperparameter);
 
-  var color = d3.scaleOrdinal()
-  .domain(["PVkW", "TBLkW"])
-  .range(["rgba(255,153,0,0.73)","rgba(98, 137, 233, 0.7)"]);
+    svg = d3.select("svg");
+    margin = {right: 50, bottom: 160, left: 200},
+    width = +svg.attr("width") - 1.7*margin.left,
+    height = +svg.attr("height") - margin.bottom,
+    g = svg.append("g").attr("transform", "translate(330,40)");
 
+    svg.append("text")
+        .attr("transform", "translate(400,40)")
+        .attr("x", 10)
+        .attr("y", 10)
+        .attr("id", "heading_text")
+        .text("Classification of Expected Rain in Test Data (Stream)");
 
-  var x = d3.scaleBand().range([0, width]),
-      y = d3.scalePow().exponent(0.2)
-          .domain([0,1000])
-          .range([height, 0]),
-      z = color;
-
-
-
-
-	
-  var area = d3.area()
-          .curve(d3.curveMonotoneX)
-          .x(function(d) { return x(d.rainfallPrediction); })
-          .y0(y(0))
-          .y1(function(d) { return y(d.kW); });
+    var color = d3.scaleOrdinal()
+                .domain(["PVkW", "TBLkW"])
+                .range(["rgba(255,153,0,0.73)","rgba(98, 137, 233, 0.7)"]);
 
 
+    var x = d3.scaleBand().range([0, width]).padding(0.05),
+        y = d3.scalePow().exponent(0.2)
+            .domain([0,1000])
+            .range([height, 0]),
+        z = color;
 
+    var area = d3.area()
+                .curve(d3.curveMonotoneX)
+                .x(function(d) { return x(d.rainfallPrediction); })
+                .y0(y(0))
+                .y1(function(d) { return y(d.kW); });
 
-  d3.csv("temp" + hyperparameter + ".csv", function(error, data) {
-    if (error) throw error;
+    var sources = [
+        {
+            id: 'actual',
+            values: tempData['actual'].map(function(d, i) {return {rainfallPrediction: i, kW: d};})
+        },
+        {
+            id: 'predicted',
+            values: tempData[hyperparameter].map(function(d, i) {return {rainfallPrediction: i, kW: d};})
+        }
+    ]
 
-    var sources = data.columns.slice(1).map(function(id) {
-      return {
-        id: id,
-        values: data.map(function(d) {
-          return {rainfallPrediction: d.rainfallPrediction, kW: d[id]};
-        })
-      };
-    });
+    // console.log(sources);
 
-  //console.log(sources);
+    x.domain(tempData[hyperparameter].map(function(d, i) { return i; }));
+    y.domain([0, 30000]);
+    z.domain(sources.map(function(c) { return c.id; }));
 
-
-  x.domain(data.map(function(d) { return d.rainfallPrediction; }));
-  y.domain([0, 30000]);
-  z.domain(sources.map(function(c) { return c.id; }));
-
-  g.append("g")
-      .attr("class", "axis axis--x")
-      .attr("transform", "translate(0," + height + ")")
-      .call(d3.axisBottom(x));
-      
-
-  g.append("g")
-      .attr("class", "axis axis--y")
-      .call(d3.axisLeft(y).tickFormat(function(d){
-          return d;
-      })
-      .ticks(8))
+    g.append("g")
+    .attr("class", "xaxis")
+    .attr("transform", "translate(0," + height + ")")
+    .call(d3.axisBottom(x))
     .append("text")
-      .attr("transform", "rotate(-90)")
-      .attr("y", 6)
-      .attr("dy", "0.71em")
-      .attr("fill", "#000")
-      .text("Rainfall");
+    .attr("y", 50)
+    .attr("x", width/2+10)
+    .attr("id", "axis_text")
+    .text("Expected Rainfall (mm)");
 
+    g.append("g")
+    .attr("class", "yaxis")
+    .call(d3.axisLeft(y).tickFormat(function(d){return d;})
+    .ticks(8))
+    .append("text")
+    .attr("transform", "rotate(-90)")
+    .attr("y", width/30+25)
+    .attr("x",-180)
+    .attr("dy", "-5.1em")
+    .attr("id", "axis_text")
+    .text("Number of samples");
 
- 
-  var source = g.selectAll(".area")
-      	     .data(sources)
-             .enter().append("g")
-             .attr("class", function(d) { return `area ${d.id}`; })
-            
-  
-	
-  source.append("path")
-       .attr("d", function(d) {area(d.values); return area(d.values); })
-       .style("fill", function(d) { return z(d.id); });
+    var source = g.selectAll(".area")
+                .data(sources)
+                .enter().append("g")
+                .attr("class", function(d) { return `area ${d.id}`; })
 
-});
+    source.append("path")
+        .attr("d", function(d) {area(d.values); return area(d.values); })
+        .style("fill", function(d) { return z(d.id); });
 
 }
 
 
 function update2(hyperparameter) {
 
-
-  var svg = d3.select("svg"),
+    // console.log('in update 2');
+    var svg = d3.select("svg"),
             margin = 200,
-            width = svg.attr("width") - margin,
+            width = svg.attr("width") - 1.7*margin,
             height = svg.attr("height") - margin ;
-            svg.append("g").attr("transform", "translate(400,40)");
+            // svg.append("g").attr("transform", "translate(400,40)");
 
 
-          svg.append("text")
+      svg.append("text")
           .attr("transform", "translate(400,40)")
-          .attr("x", 70)
-          .attr("y", 80)
-          .attr("font-size", "40px")
-   
-  var xScale = d3.scaleBand().range([0, width]).padding(0.4),
+          .attr("x", 10)
+          .attr("y", 10)
+          .attr("id", "heading_text")
+          .text("Classification of Expected Rain in Test Data (Bar)");
+
+  var xScale = d3.scaleBand().range([0, width]).padding(0.25),
       yScale = d3.scalePow().exponent(0.2)
                 .domain([0,1000])
                 .range([height, 0]);
@@ -179,102 +260,198 @@ function update2(hyperparameter) {
 
   var g1 = svg.append("g")
            .attr("id" , "c1")
-           .attr("transform", "translate(" + 400 + "," + 40 + ")");
+           .attr("transform", "translate(" + 330 + "," + 70 + ")");
 
-    d3.csv("main_test" + hyperparameter + ".csv", function(error, data) {
-        if (error) {
-            throw error;
-        }
+   xScale.domain(tempData[hyperparameter].map(function(d,i) {return i;}));
+   yScale.domain([0, d3.max(tempData[hyperparameter], function(d, i) { return 30000; })]);
 
-        xScale.domain(data.map(function(d,i) { return d.rainfallPrediction; }));
-        yScale.domain([0, d3.max(data, function(d) { return 60000; })]);
+    // var label1 = svg.append("g")
+    //             .attr("transform", "translate(300,300)")
+    //             .attr("class" , "bar");
+    //
+    //     label1.append("rect")
+    //             .attr("x", width-margin)
+    //             .attr("y",35)
+    //             .attr("width", xScale.bandwidth()-20)
+    //             .attr("height",xScale.bandwidth()-20);
+    //
+    //     label1.append("text")
+    //             .attr("x", width-margin+xScale.bandwidth()-10)
+    //             .attr("y", 50)
+    //             .attr("font-size", "20px");
 
-        var label1 = svg.append("g")
-                    .attr("transform", "translate(100,0)")
-                    .attr("class" , "bar");
+     g1.append("g")
+     .attr("class", "xaxis")
+     .attr("transform", "translate(0," + height + ")")
+     .call(d3.axisBottom(xScale))
+     .append("text")
+     .attr("y", 50)
+     .attr("x", width/2+10)
+     .attr("id", "axis_text")
+     .text("Expected Rainfall (mm)");
 
-            label1  .append("rect")
-                    .attr("x", width-margin)
-                    .attr("y",35)
-                    .attr("width", xScale.bandwidth()-20)
-                    .attr("height",xScale.bandwidth()-20);
+    g1.append("g")
+     .attr("class", "yaxis")
+     .call(d3.axisLeft(yScale).tickFormat(function(d){
+         return d;
+     })
+     .ticks(8))
+     .append("text")
+     .attr("transform", "rotate(-90)")
+     .attr("y", width/30+15)
+     .attr("x",-150)
+     .attr("dy", "-5.1em")
+     .attr("id", "axis_text")
+     .text("Number of test samples");
 
-            label1 .append("text")
-                    .attr("x", width-margin+xScale.bandwidth()-10)
-                    .attr("y", 50)
-                    .attr("font-size", "20px");
-    
-        // g1.append("g")
-        //  .attr("transform", "translate(0," + height + ")")
-        //  .call(d3.axisBottom(xScale));
+     var filter = [];
+     var val = Math.round((0.85 - hyperparameter) * 200 / 3);
+     if(val < 0) {
+         val = 6 * -1 * val;
+     }
+    //  console.log(val);
 
-        // g1.append("g")
-        //  .call(d3.axisLeft(yScale).tickFormat(function(d){
-        //      return d;
-        //  }).ticks(10));
+     for(var i = 0 ;i < 60; i++){
+          filter[i] = svg.append("defs")
+             .append("filter")
+             .attr("id", "blur"+i)
+             .append("feGaussianBlur")
+             .attr("in", "SourceGraphic")
+             .attr("stdDeviation", function(d){
 
-         g1.append("g")
-         .attr("transform", "translate(0," + height + ")")
-         .call(d3.axisBottom(xScale))
-         .append("text")
-         .attr("y", 50)
-         .attr("x", width/2+80)
-         .attr("font-size","20px")
-         .attr("text-anchor", "end")
-         .attr("stroke", "black")
-         .text("Expected Rainfall");
+                 if(i <= val)
+                 return i/4.0;
+                 else
+                 return i/20.0;
+             })
+             .attr("result", "blur");
+     }
 
-        g1.append("g")
-         .call(d3.axisLeft(yScale).tickFormat(function(d){
-             return d;
-         })
-         .ticks(8))
-         .append("text")
-         .attr("transform", "rotate(-90)")
-         .attr("y", width/30)
-         .attr("x",-150)
-         .attr("dy", "-5.1em")
-         .attr("font-size","20px")
-         .attr("font-family", "sans serif")
-         .attr("stroke", "black")
-         .attr("stroke-width", 1)
-         .text("Number of test samples");
+    g1.selectAll(".bar")
+     .data(tempData[hyperparameter])
+     .enter().append("rect")
+     .attr("class", "bar")
+     .attr("x", function(d, i) { return xScale(i); })
+     .attr("y", function(d) {return yScale(d); })
+     .attr("width", 15)
+     .attr("height", function(d) { return height - yScale(d); })
+     .attr("filter", function(d,i) {return "url(#blur"+i+")";});
 
-        g1.selectAll(".bar")
-         .data(data)
-         .enter().append("rect")
-         .attr("class", "bar")
-         .attr("x", function(d) { return xScale(d.rainfallPrediction); })
-         .attr("y", function(d) { return yScale(d.numberOfTestExamples); })
-         .attr("width", 15)
-         .attr("height", function(d) { return height - yScale(d.numberOfTestExamples); });
+}
 
+function update3(hyperparameter) {
+
+    // Set the dimensions of the canvas / graph
+    svg = d3.select("svg");
+
+    var margin = {top: 120, right: 50, bottom: 160, left: 200},
+        width = +svg.attr("width") - 3.7*margin.left,
+        height = +svg.attr("height") - margin.top - margin.bottom;
+        g = svg.append("g").attr("transform", "translate(360," + margin.top + ")");
+
+    svg.append("text")
+        .attr("transform", "translate(400,40)")
+        .attr("x", -50)
+        .attr("y", 10)
+        .attr("id", "heading_text")
+        .text("Cubic Error Rate variation with hyperparameter");
+
+    // Set the ranges
+    var x = d3.scaleLinear().range([0, width]);
+    var y = d3.scaleLinear().range([height, 0]);
+
+    // Define the axes
+    var xAxis = d3.axisBottom(x).ticks(15);
+
+    var yAxis = d3.axisLeft(y).ticks(5);
+
+    // console.log(hyperData);
+    // Define the line
+    var valueline = d3.line()
+        .curve(d3.curveMonotoneX)
+        .x(function(d) { return x(d.zeta); })
+        .y(function(d) { return y(d.error); });
+
+    hyperData.forEach(function(d) {
+        d.zeta = d.zeta;
+        d.error = +d.error;
     });
-} 
 
+    // Scale the range of the data
+    x.domain(d3.extent(hyperData, function(d) { return d.zeta; }));
+    y.domain([0, d3.max(hyperData, function(d) { return d.error; })]);
+
+    // Add the valueline path.
+    g.append("path")
+        .attr("id", "line_curve")
+        .attr("d", valueline(hyperData));
+
+    // Add the scatterplot
+    g.selectAll("dot")
+        .data(hyperData)
+      .enter().append("circle")
+        .attr("r", function(d) {
+            if(d.zeta == hyperparameter)
+            return 6;
+            else
+            return 0;
+        })
+        .attr("cx", function(d) { return x(d.zeta); })
+        .attr("cy", function(d) { return y(d.error); })
+        .attr("fill","black");
+
+    // Add the X Axis
+    g.append("g")
+        .attr("class", "xaxis")
+        .attr("transform", "translate(0," + height + ")")
+        .call(xAxis)
+        .append("text")
+        .attr("y", 50)
+        .attr("x", width/2+10)
+        .attr("id", "axis_text")
+        .text("Hyperparameter (alpha)");
+
+    // Add the Y Axis
+    g.append("g")
+        .attr("class", "yaxis")
+        .call(yAxis)
+        .append("text")
+        .attr("transform", "rotate(-90)")
+        .attr("y", width/30+20)
+        .attr("x",-150)
+        .attr("dy", "-5.1em")
+        .attr("id", "axis_text")
+        .text("Cubic Error Rate (CER)");
+
+}
 
 d3.select("#hyperparameter").on("input", function() {
-	
-  svg.selectAll("*").remove();
 
-  //console.log(flag);
+    svg.selectAll("*").remove();
 
-  last_val = +this.value  ;
+    // console.log(tempData[0]);
 
-  document.getElementById("insert").innerHTML = last_val/10 ;
+    last_val = +this.value;
 
-  if(flag==0)
-  update1(+this.value);
-  
-  else
-  update2(+this.value) ;  
+    document.getElementById("insert").innerHTML = last_val/1000 ;
 
-  
+    if(flag==0)
+    update1(+this.value/1000);
 
+    else if(flag == 1)
+    update2(+this.value/1000) ;
+
+    else
+    update3(+this.value/1000) ;
 })
 
+async function SerialFlow(){
 
-update1('5')
+    await readData(1);
+    await update1('0.5');
+}
+
+SerialFlow();
 
 </script>
 </body>
