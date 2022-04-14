@@ -17,7 +17,7 @@
   },
   "homepage": "https://github.com/jain-harshali/Uncertainty-Visualisation#readme",
   "dependencies": {
-    "async": "^3.0.1",
+    "async": "^3.2.2",
     "csv": "^0.3.7",
     "csv-parser": "^2.3.0",
     "csv-stringify": "^5.3.0",
